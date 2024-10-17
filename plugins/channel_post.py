@@ -1,4 +1,4 @@
-#(©)Codexbotz
+#(©)CodeXBotz
 
 import asyncio
 from pyrogram import filters, Client
@@ -10,6 +10,7 @@ from database.database import get_admin_list
 from config import CHANNEL_ID, DISABLE_CHANNEL_BUTTON, OWNER_ID
 from helper_func import encode
 
+# Handles message copy and link generation for admins and owners
 @Bot.on_message(filters.private & (filters.user(get_admin_list) | filters.user(OWNER_ID)) & ~filters.command(['start', 'users', 'broadcast', 'batch', 'genlink', 'stats']))
 async def channel_post(client: Client, message: Message):
     reply_text = await message.reply_text("Please Wait...!", quote=True)
@@ -21,7 +22,7 @@ async def channel_post(client: Client, message: Message):
         post_message = await message.copy(chat_id=client.db_channel.id, disable_notification=True)
     except Exception as e:
         print(e)
-        await reply_text.edit_text("Something went Wrong..! Please try again.")
+        await reply_text.edit_text("Something went wrong..! Please try again.")
         return
 
     converted_id = post_message.id * abs(client.db_channel.id)
@@ -42,6 +43,7 @@ async def channel_post(client: Client, message: Message):
         except Exception:
             pass
 
+# For handling new posts in the DB channel
 @Bot.on_message(filters.channel & filters.incoming & filters.chat(CHANNEL_ID))
 async def new_post(client: Client, message: Message):
     if DISABLE_CHANNEL_BUTTON:
