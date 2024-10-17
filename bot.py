@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 from database.database import get_admin_list  # Import the function to get dynamic admins
 
-from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
+from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT, OWNER_ID
 
 class Bot(Client):
     def __init__(self):
