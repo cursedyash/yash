@@ -4,7 +4,7 @@ from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, ChannelInvalid
-
+from config import START_MSG, FORCE_MSG
 from bot import Bot
 from helper_func import subscribed, encode, decode, get_messages
 from database.database import (
