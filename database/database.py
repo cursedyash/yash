@@ -1,42 +1,38 @@
 #(©)CodeXBotz
 
-
-
-
 import pymongo, os
 from config import DB_URI, DB_NAME
 
-
+# Establish a connection to the MongoDB database
 dbclient = pymongo.MongoClient(DB_URI)
 database = dbclient[DB_NAME]
 
-
+# Define the collections for users and configuration
 user_data = database['users']
 config_data = database['config']
 
-
-
-
-async def present_user(user_id : int):
+async def present_user(user_id: int):
+    """Check if a user exists in the database."""
     found = user_data.find_one({'_id': user_id})
     return bool(found)
 
 async def add_user(user_id: int):
+    """Add a new user to the database."""
     user_data.insert_one({'_id': user_id})
     return
 
 async def full_userbase():
+    """Retrieve all user IDs from the database."""
     user_docs = user_data.find()
     user_ids = []
     for doc in user_docs:
         user_ids.append(doc['_id'])
-        
     return user_ids
 
 async def del_user(user_id: int):
+    """Remove a user from the database."""
     user_data.delete_one({'_id': user_id})
     return
-
 
 async def add_admin(user_id: int):
     """Promote a user to admin in the database."""
@@ -47,7 +43,7 @@ async def remove_admin(user_id: int):
     user_data.update_one({'_id': user_id}, {'$set': {'is_admin': False}})
 
 async def get_admin_list():
-    """Get a list of all admins from the database."""
+    """Get a list of all dynamic admins from the database."""
     admin_docs = user_data.find({'is_admin': True})
     return [doc['_id'] for doc in admin_docs]
 
