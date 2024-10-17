@@ -2,7 +2,7 @@
 
 from pyrogram import __version__
 from bot import Bot
-from config import OWNER_ID, ADMINS
+from config import OWNER_ID, ADMINS, START_MSG, FORCE_MSG
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from database.database import add_admin, remove_admin, get_admin_list, get_force_sub_channel
 
