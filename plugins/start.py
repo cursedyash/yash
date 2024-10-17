@@ -3,11 +3,15 @@ import asyncio
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
+from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, ChannelInvalid
 
 from bot import Bot
 from helper_func import subscribed, encode, decode, get_messages
-from database.database import add_user, del_user, full_userbase, present_user, get_admin_list, get_force_sub_channel
+from database.database import (
+    add_user, del_user, full_userbase, present_user, 
+    get_admin_list, add_admin, remove_admin, 
+    set_force_sub_channel, get_force_sub_channel
+)
 
 # Function for checking admin dynamically
 async def is_admin(user_id):
@@ -36,7 +40,7 @@ async def start_command(client: Client, message: Message):
                 end = int(int(argument[2]) / abs(client.db_channel.id))
             except:
                 return
-            ids = range(start, end+1) if start <= end else [i for i in range(start, end-1, -1)]
+            ids = range(start, end + 1) if start <= end else [i for i in range(start, end - 1, -1)]
         elif len(argument) == 2:
             try:
                 ids = [int(int(argument[1]) / abs(client.db_channel.id))]
@@ -51,10 +55,7 @@ async def start_command(client: Client, message: Message):
         await temp_msg.delete()
 
         for msg in messages:
-            if bool(CUSTOM_CAPTION) and bool(msg.document):
-                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
-            else:
-                caption = "" if not msg.caption else msg.caption.html
+            caption = "" if not msg.caption else msg.caption.html
 
             reply_markup = msg.reply_markup if DISABLE_CHANNEL_BUTTON else None
 
@@ -90,50 +91,90 @@ async def start_command(client: Client, message: Message):
         )
         return
 
-
-@Bot.on_message(filters.command('start') & filters.private)
-async def not_joined(client: Client, message: Message):
-    buttons = [
-        [
-            InlineKeyboardButton("Join Channel", url=await get_force_sub_channel())
-        ]
-    ]
+@Bot.on_message(filters.command('setchannel') & filters.private)
+async def set_channel(client: Client, message: Message):
+    if not await is_admin(message.from_user.id):
+        return await message.reply("You are not authorized to perform this action.")
+    
+    channel_id = message.text.split(" ", 1)
+    if len(channel_id) != 2 or not channel_id[1].isdigit():
+        return await message.reply("Usage: /setchannel <channel_id>")
+    
+    channel_id = int(channel_id[1])
+    
     try:
-        buttons.append(
-            [
-                InlineKeyboardButton("Try Again", url=f"https://t.me/{client.username}?start={message.command[1]}")
-            ]
-        )
-    except IndexError:
-        pass
+        channel_info = await client.get_chat(channel_id)
+        channel_name = channel_info.title
+        await set_force_sub_channel(channel_id)
+        await message.reply(f"Channel set to: {channel_name} (ID: {channel_id})")
+    except ChannelInvalid:
+        await message.reply("The provided channel ID is invalid. Please check and try again.")
+    except Exception as e:
+        await message.reply(f"An error occurred: {str(e)}")
 
-    await message.reply(
-        text=FORCE_MSG.format(
-            first=message.from_user.first_name,
-            last=message.from_user.last_name,
-            username=None if not message.from_user.username else '@' + message.from_user.username,
-            mention=message.from_user.mention,
-            id=message.from_user.id
-        ),
-        reply_markup=InlineKeyboardMarkup(buttons),
-        quote=True,
-        disable_web_page_preview=True
-    )
+@Bot.on_message(filters.command('getchannel') & filters.private)
+async def get_channel(client: Client, message: Message):
+    if not await is_admin(message.from_user.id):
+        return await message.reply("You are not authorized to perform this action.")
+    
+    channel_id = await get_force_sub_channel()
+    if channel_id is None:
+        await message.reply("No force subscription channel set.")
+        return
+    
+    try:
+        channel_info = await client.get_chat(channel_id)
+        channel_name = channel_info.title
+        await message.reply(f"The current force subscription channel is: {channel_name} (ID: {channel_id})")
+    except Exception as e:
+        await message.reply(f"An error occurred while fetching the channel: {str(e)}")
 
+@Bot.on_message(filters.command('promote') & filters.private)
+async def promote_admin(client: Client, message: Message):
+    if not await is_admin(message.from_user.id):
+        return await message.reply("You are not authorized to perform this action.")
+    
+    user_id = message.text.split(" ", 1)
+    if len(user_id) != 2 or not user_id[1].isdigit():
+        return await message.reply("Usage: /promote <user_id>")
+    
+    await add_admin(int(user_id[1]))
+    await message.reply(f"User {user_id[1]} promoted to admin.")
+
+@Bot.on_message(filters.command('demote') & filters.private)
+async def demote_admin(client: Client, message: Message):
+    if not await is_admin(message.from_user.id):
+        return await message.reply("You are not authorized to perform this action.")
+    
+    user_id = message.text.split(" ", 1)
+    if len(user_id) != 2 or not user_id[1].isdigit():
+        return await message.reply("Usage: /demote <user_id>")
+    
+    await remove_admin(int(user_id[1]))
+    await message.reply(f"User {user_id[1]} demoted from admin.")
+
+@Bot.on_message(filters.command('removechannel') & filters.private)
+async def remove_channel(client: Client, message: Message):
+    if not await is_admin(message.from_user.id):
+        return await message.reply("You are not authorized to perform this action.")
+    
+    await set_force_sub_channel(None)  # Set channel to None to remove it
+    await message.reply("Force subscription channel removed.")
 
 @Bot.on_message(filters.command('users') & filters.private)
 async def get_users(client: Bot, message: Message):
     if not await is_admin(message.from_user.id):
         return await message.reply("You are not authorized to perform this action.")
+    
     msg = await client.send_message(chat_id=message.chat.id, text="Processing ...")
     users = await full_userbase()
     await msg.edit(f"{len(users)} users are using this bot")
-
 
 @Bot.on_message(filters.private & filters.command('broadcast'))
 async def send_text(client: Bot, message: Message):
     if not await is_admin(message.from_user.id):
         return await message.reply("You are not authorized to perform this action.")
+    
     if message.reply_to_message:
         query = await full_userbase()
         broadcast_msg = message.reply_to_message
