@@ -8,6 +8,7 @@ from pyrogram import Client
 from pyrogram.enums import ParseMode
 import sys
 from datetime import datetime
+from database.database import get_admin_list  # Import the function to get dynamic admins
 
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
 
@@ -24,11 +25,15 @@ class Bot(Client):
             bot_token=TG_BOT_TOKEN
         )
         self.LOGGER = LOGGER
+        self.dynamic_admins = []  # Initialize dynamic admins list
 
     async def start(self):
         await super().start()
         usr_bot_me = await self.get_me()
         self.uptime = datetime.now()
+
+        # Fetch dynamic admins from the database at startup
+        self.dynamic_admins = await get_admin_list()
 
         if FORCE_SUB_CHANNEL:
             try:
@@ -43,10 +48,11 @@ class Bot(Client):
                 self.LOGGER(__name__).warning(f"Please Double check the FORCE_SUB_CHANNEL value and Make sure Bot is Admin in channel with Invite Users via Link Permission, Current Force Sub Channel Value: {FORCE_SUB_CHANNEL}")
                 self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/CodeXBotzSupport for support")
                 sys.exit()
+                
         try:
             db_channel = await self.get_chat(CHANNEL_ID)
             self.db_channel = db_channel
-            test = await self.send_message(chat_id = db_channel.id, text = "Test Message")
+            test = await self.send_message(chat_id=db_channel.id, text="Test Message")
             await test.delete()
         except Exception as e:
             self.LOGGER(__name__).warning(e)
@@ -65,7 +71,8 @@ class Bot(Client):
 ░╚════╝░░╚════╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░░╚════╝░░░░╚═╝░░░╚══════╝
                                           """)
         self.username = usr_bot_me.username
-        #web-response
+        
+        # Web response
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
