@@ -19,7 +19,7 @@ async def is_subscribed(filter, client, update):
     dynamic_admins = await get_admin_list()
     
     # Check if the user is a static admin (owner) or a dynamic admin
-    if user_id in dynamic_admins or user_id == client.config.OWNER_ID:  # Assuming client.config has OWNER_ID
+    if user_id in dynamic_admins or user_id == OWNER_ID:  # Assuming client.config has OWNER_ID
         return True
     
     try:
