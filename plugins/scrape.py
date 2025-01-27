@@ -3,7 +3,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait
 from helper_func import encode, get_message_id
-from config import ADMINS, DB_CHANNEL_ID  # Assuming DB_CHANNEL_ID is your database channel's ID
+from config import ADMINS, CHANNEL_ID  # Assuming DB_CHANNEL_ID is your database channel's ID
 
 @Bot.on_message(filters.private & filters.user(ADMINS) & filters.command('scrape'))
 async def scrape_content(client: Client, message: Message):
