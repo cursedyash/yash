@@ -65,7 +65,7 @@ async def scrape_content(client: Client, message: Message):
             if media:
                 # Post media to the database channel
                 await client.send_photo(
-                    chat_id=DB_CHANNEL_ID,
+                    chat_id=CHANNEL_ID,
                     photo=media.file_id,
                     caption=new_caption,
                     reply_markup=reply_markup
@@ -73,7 +73,7 @@ async def scrape_content(client: Client, message: Message):
             else:
                 # If no media, post the text to the database channel
                 await client.send_message(
-                    chat_id=DB_CHANNEL_ID,
+                    chat_id=CHANNEL_ID,
                     text=new_caption,
                     reply_markup=reply_markup
                 )
